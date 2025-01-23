@@ -1,6 +1,5 @@
 import tkinter as tk
 from tkinter import messagebox, simpledialog
-from mock_receiver import SimulatedRFIDReader
 from database import MongoDB
 from seeder import *
 import threading
