@@ -1,4 +1,3 @@
-
 import random
 categories = [
     {"id": 1, "name": "Burgers"},
@@ -56,7 +55,7 @@ product_names = {
 }
 
 rfid_list = [
-    1234567890,
+    163425166062,
     9876543210,
     1122334455,
     9988776655,
@@ -111,7 +110,8 @@ def seed_sets( products, num_sets=10, min_products=2, max_products=5):
         set_list=[]
         for _ in range(num_products):
             product = random.choice(products)  # Wybierz losowy produkt
-            product_name = product["name"]
+            print(product)
+            product_name = product[1]
 
             # Dodaj produkt do zestawu (jeśli jeszcze go nie ma)
             if product_name not in selected_products:
@@ -159,7 +159,7 @@ def seed_mappings(db,rfid_mappings):
 
 
 def seed(db):
-    db.clear_all_collections()
+    db.clear_all_tables()
     seed_categories(db)
     seed_products(db)
 
@@ -169,4 +169,3 @@ def seed(db):
     sets = seed_sets(products)
     generated_sets_with_rfid = generate_sets_to_rfid(sets)
     seed_mappings(db,generated_sets_with_rfid)
-

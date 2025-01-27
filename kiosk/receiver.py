@@ -3,6 +3,7 @@ import paho.mqtt.client as mqtt
 import json
 import threading
 
+
 class MqttClient(QObject):
     message_received = pyqtSignal(dict)  # Deklaracja sygnału
 
@@ -13,9 +14,18 @@ class MqttClient(QObject):
         self.topic = topic
         self.client = mqtt.Client()
         self.is_listening = True  # Flaga kontrolująca nasłuchiwanie RFID
+        self.message = None
+        self.Kiosk = None
+
+    def setMessage(self, message):
+        self.message = message
+
+    def setKiosk(self, kiosk):
+        self.kiosk = kiosk
 
     def run(self):
         # Konfiguracja klienta MQTT
+        print("receiver sie lonczy")
         self.client.on_connect = self.on_connect
         self.client.on_message = self.on_message
 
@@ -29,16 +39,23 @@ class MqttClient(QObject):
     def on_connect(self, client, userdata, flags, rc):
         if rc == 0:
             self.message_received.emit({"status": "Połączono z brokerem MQTT."})
+            print("polaczylem sie")
             client.subscribe(self.topic)
         else:
             self.message_received.emit({"error": f"Błąd połączenia: kod {rc}"})
 
     def on_message(self, client, userdata, msg):
+        print(msg)
         try:
             message_decoded = msg.payload.decode("utf-8")
+            print(message_decoded)
             data = json.loads(message_decoded)
+            print(data["Karta"])
+            self.message = data["Karta"]
+            self.kiosk.handle_mqtt_message(data["Karta"])
             self.message_received.emit(data)  # Emit sygnału z danymi
         except json.JSONDecodeError as e:
+            print("exzce")
             self.message_received.emit({"error": f"Błąd dekodowania JSON: {e}"})
 
     def start_rfid_listener(self):

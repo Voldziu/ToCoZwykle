@@ -1,6 +1,6 @@
 import tkinter as tk
 from tkinter import messagebox, simpledialog
-from database import MongoDB
+from database import SQLDatabase
 from seeder import *
 import threading
 import time
@@ -10,12 +10,9 @@ from PyQt6.QtCore import QCoreApplication
 import sys
 import random
 import json
+
+
 # Konfiguracja MQTT
-
-
-
-
-
 
 
 class KioskApp:
@@ -28,6 +25,7 @@ class KioskApp:
         master.geometry("1000x600")
 
         self.current_rfid = None
+        self.message = None
 
         # Layout główny
         self.main_frame = tk.Frame(master)
@@ -85,16 +83,19 @@ class KioskApp:
         # Wczytanie kategorii z bazy danych
         self.load_categories()
         self.mqtt_client = mqtt_client
+        self.mqtt_client.setKiosk(self)
+        self.mqtt_client.setMessage(self.message)
         self.mqtt_client.message_received.connect(self.handle_mqtt_message)
 
         # Koszyk
         self.cart = {}
+
     def load_categories(self):
         """Ładuje kategorie z bazy danych i wyświetla w lewym panelu."""
         categories = self.db.get_categories()
         self.categories_listbox.delete(0, tk.END)
         for category in categories:
-            self.categories_listbox.insert(tk.END, category["name"])
+            self.categories_listbox.insert(tk.END, category[1])
 
     def on_category_select(self, event):
         """Obsługa wyboru kategorii."""
@@ -118,11 +119,12 @@ class KioskApp:
             product_frame.grid(row=row, column=col, padx=10, pady=10)
 
             # Etykieta z nazwą produktu
-            product_name_label = tk.Label(product_frame, text=product["name"], font=("Helvetica", 14), bg="lightblue")
+            product_name_label = tk.Label(product_frame, text=product[1], font=("Helvetica", 14), bg="lightblue")
             product_name_label.pack(pady=5)
 
             # Etykieta z ceną produktu
-            product_price_label = tk.Label(product_frame, text=f"{product['price']} PLN", font=("Helvetica", 12), bg="lightblue")
+            product_price_label = tk.Label(product_frame, text=f"{product[2]} PLN", font=("Helvetica", 12),
+                                           bg="lightblue")
             product_price_label.pack(pady=5)
 
             # Przycisk dodania do koszyka
@@ -134,12 +136,14 @@ class KioskApp:
                 col = 0
                 row += 1
 
-    def add_to_cart(self, product,quantity=1):
+    def add_to_cart(self, product, quantity=1):
         print(product)
+        print(self.message)
+        print(self.mqtt_client.message)
 
         """Dodaje produkt do koszyka."""
-        product_name = product["name"]
-        product_price = product["price"]
+        product_name = product[1]
+        product_price = product[2]
 
         if product_name in self.cart:
             # Produkt już istnieje w koszyku - zwiększ ilość
@@ -150,16 +154,15 @@ class KioskApp:
 
         self.update_cart_list()
 
-    def add_set_to_cart(self,set_items_list):
+    def add_set_to_cart(self, set_items_list):
         print(f"debug {set}")
         for set_item in set_items_list:
             product = set_item["product"]
 
             product_quantity = set_item['quantity']
-            self.add_to_cart(product,product_quantity)
+            self.add_to_cart(product, product_quantity)
 
         self.update_cart_list()
-
 
     def update_cart_list(self):
         """Aktualizuje listę produktów w koszyku."""
@@ -235,9 +238,10 @@ class KioskApp:
 
                     for set_item in set_items_list:
                         product = set_item["product"]
-                        product_name = product["name"]
+                        product_name = product[1]
                         product_quantity = set_item['quantity']
-                        product_label = tk.Label(set_frame, text=f"{product_name}: {product_quantity}", font=("Helvetica", 12),
+                        product_label = tk.Label(set_frame, text=f"{product_name}: {product_quantity}",
+                                                 font=("Helvetica", 12),
                                                  bg="white")
                         product_label.pack(anchor="w", padx=5, pady=2)
 
@@ -264,15 +268,18 @@ class KioskApp:
 
     def handle_mqtt_message(self, data):
         """Obsługa wiadomości MQTT."""
-        if "rfid" in data:
-            rfid = data["rfid"]
-            self.set_current_rfid(rfid)
-    def set_current_rfid(self,rfid):
+        print(data)
+        # if "rfid" in data:
+        #     rfid = data["rfid"]
+        #     self.set_current_rfid(rfid)
+
+    def set_current_rfid(self, rfid):
         print(f"Succesfully registered rfid: {rfid}")
         self.current_rfid = rfid
 
 
 """DEBUG ONLY"""
+
 
 def start_terminal_rfid_listener(kiosk_app):
     """Funkcja działająca w osobnym wątku, która nasłuchuje na RFID wpisywany w terminalu."""
@@ -291,6 +298,8 @@ def start_terminal_rfid_listener(kiosk_app):
 
 
 """/DEBUG ONLY"""
+
+
 def main():
     MQTT_BROKER = "10.108.33.128"
     MQTT_PORT = 1883
@@ -303,7 +312,7 @@ def main():
     mqtt_client.run()
 
     # Utwórz połączenie z bazą danych (musisz zaimplementować klasę Database)
-    db = MongoDB()
+    db = SQLDatabase()
     seed(db)
 
     # Stwórz aplikację Tkinter (GUI)
