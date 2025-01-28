@@ -1,4 +1,4 @@
-from tkinter import messagebox
+from tkinter import simpledialog
 
 class KioskController:
     """Controller responsible for coordinating the View and Model."""
@@ -31,76 +31,54 @@ class KioskController:
 
     def add_to_cart(self, product, quantity=1):
         """Adds a product to the cart."""
-        product_name = product[1]
-        product_price = product[2]
-
-        if product_name in self.cart:
-            self.cart[product_name]["quantity"] += quantity
-        else:
-            self.cart[product_name] = {"quantity": quantity, "price": product_price}
-
-        self.view.load_cart_list(self.cart)
-
-    def add_set_to_cart(self, set_items_list):
-        """Adds all items in a user-defined set to the cart."""
-        for set_item in set_items_list:
-            product = set_item["product"]
-            product_quantity = set_item["quantity"]
-            self.add_to_cart(product, product_quantity)
-
+        self.cart = self.model.add_product_to_cart(self.cart, product, quantity)
         self.view.load_cart_list(self.cart)
 
     def clear_cart(self):
         """Clears the cart."""
-        self.cart = {}
+        self.cart = self.model.clear_cart()
         self.view.load_cart_list(self.cart)
 
     def checkout(self):
         """Handles the checkout process."""
         if not self.cart:
-            self.view.master.bell()
-            messagebox.showwarning("Koszyk Pusty", "Nie możesz złożyć zamówienia z pustym koszykiem.")
+            self.view.show_warning("Koszyk Pusty", "Nie możesz złożyć zamówienia z pustym koszykiem.")
             return
 
-        total_price = sum(details["price"] * details["quantity"] for details in self.cart.values())
-        messagebox.showinfo("Zamówienie złożone", f"Twoje zamówienie o wartości {total_price:.2f} PLN zostało złożone!")
+        total_price = self.model.calculate_total(self.cart)
+        self.view.show_info("Zamówienie złożone", f"Twoje zamówienie o wartości {total_price:.2f} PLN zostało złożone!")
         self.clear_cart()
 
     def show_user_sets(self):
         """Handles showing user sets."""
         if self.current_rfid is None:
-            messagebox.showwarning("Brak karty", "Nie zeskanowano karty. Zeskanuj kartę, aby zobaczyć swoje zestawy.")
+            self.view.show_warning("Brak karty", "Nie zeskanowano karty. Zeskanuj kartę, aby zobaczyć swoje zestawy.")
         else:
             user_sets = self.model.get_sets_by_rfid(self.current_rfid)
-            if not user_sets:
-                messagebox.showinfo("Moje Zestawy", "Nie znaleziono zestawów przypisanych do Twojej karty.")
-            else:
-                self.view.display_user_sets(user_sets, self.add_set_to_cart, self.delete_set, self.rename_set)
+            
+            self.view.display_user_sets(user_sets, self.add_set_to_cart, self.delete_set, self.rename_set)
+
+    def add_set_to_cart(self, set_items):
+        """Adds all items in the set to the cart."""
+        for item in set_items:
+            self.cart = self.model.add_product_to_cart(self.cart, item["product"], item["quantity"])
+        self.view.load_cart_list(self.cart)
 
     def delete_set(self, set_name):
-        """Deletes a user-defined set."""
+        """Deletes a set."""
         self.model.delete_set(set_name)
-        messagebox.showinfo("Zestaw usunięty", f"Zestaw '{set_name}' został usunięty.")
+        self.view.show_info("Usunięto zestaw", f"Zestaw {set_name} został usunięty.")
+        self.show_user_sets()
 
-    def rename_set(self, old_name):
-        """Renames a user-defined set."""
-        new_name = self.view.prompt_rename_set(old_name)
+    def rename_set(self, set_name):
+        """Renames a set."""
+        new_name = simpledialog.askstring("Zmiana nazwy", f"Podaj nową nazwę dla zestawu {set_name}:")
         if new_name:
-            self.model.rename_set(old_name, new_name)
-            messagebox.showinfo("Zestaw Zmieniony", f"Zestaw '{old_name}' został zmieniony na '{new_name}'.")
+            self.model.rename_set(set_name, new_name)
+            self.view.show_info("Zmiana nazwy", f"Zestaw {set_name} został zmieniony na {new_name}.")
+            self.show_user_sets() 
 
-    def handle_mqtt_message(self, data):
-        """Handles incoming MQTT messages."""
-        if "rfid" in data:
-            self.set_current_rfid(data["rfid"])
-
-    def set_current_rfid(self, rfid):
-        """Sets the currently active RFID."""
-        self.current_rfid = rfid
-        print(f"RFID registered: {rfid}")
-    
     def handle_rfid_input(self, rfid):
         """Handles the input from the RFID terminal."""
-        print(f"Processing RFID: {rfid}")
-        # Pass the RFID to the model (you can store it or use it for further processing)
-        self.set_current_rfid(rfid)
+        self.current_rfid = rfid
+        self.view.update_rfid_display(rfid)

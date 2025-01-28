@@ -1,5 +1,5 @@
 import tkinter as tk
-from tkinter import simpledialog
+from tkinter import simpledialog, messagebox
 
 class KioskView:
     """View responsible for the GUI."""
@@ -71,7 +71,7 @@ class KioskView:
         if selected_index:
             return self.categories_listbox.get(selected_index[0])
         else:
-            return None  # No selection
+            return None
 
     def load_categories(self, categories):
         """Displays categories in the listbox."""
@@ -107,7 +107,7 @@ class KioskView:
             self.cart_listbox.insert(tk.END, f"{product_name} - {quantity}x - {total_price:.2f} PLN")
 
     def display_user_sets(self, user_sets, add_set_to_cart, delete_set, rename_set):
-        """Displays user-defined sets."""
+        """Displays user-defined sets with options to add to cart, delete, and rename."""
         top = tk.Toplevel(self.master)
         top.title("Moje Zestawy")
 
@@ -115,12 +115,12 @@ class KioskView:
             messagebox.showinfo("Moje Zestawy", "Nie znaleziono zestawów przypisanych do Twojej karty.")
             return
 
-        # Tworzenie menu z zestawami
+        # Create frames for each set
         for set_name, set_items_list in user_sets.items():
             set_frame = tk.LabelFrame(top, text=set_name, font=("Helvetica", 14), padx=10, pady=10)
             set_frame.pack(fill=tk.X, pady=5)
 
-            # Wyświetlanie przedmiotów w zestawie
+            # Display items in the set
             for set_item in set_items_list:
                 product = set_item["product"]
                 product_name = product["name"]
@@ -128,27 +128,34 @@ class KioskView:
                 product_label = tk.Label(set_frame, text=f"{product_name}: {product_quantity}", font=("Helvetica", 12))
                 product_label.pack(anchor="w", padx=5, pady=2)
 
-            # Tworzenie ramek z przyciskami
+            # Create a frame for buttons
             button_frame = tk.Frame(set_frame)
             button_frame.pack(fill=tk.X, pady=5)
 
-            # Przycisk "Dodaj do koszyka"
+            # "Add to Cart" button
             add_to_cart_button = tk.Button(button_frame, text="Dodaj do koszyka", command=lambda s=set_items_list: add_set_to_cart(s))
             add_to_cart_button.pack(side=tk.LEFT, padx=5)
 
-            # Przycisk "Usuń"
+            # "Delete" button
             delete_button = tk.Button(button_frame, text="Usuń", command=lambda s=set_name: delete_set(s))
             delete_button.pack(side=tk.LEFT, padx=5)
 
-            # Przycisk "Zmień nazwę"
+            # "Rename" button
             rename_button = tk.Button(button_frame, text="Zmień nazwę", command=lambda s=set_name: rename_set(s))
             rename_button.pack(side=tk.LEFT, padx=5)
 
-        # Przycisk do zamknięcia okna
+        # Close button
         close_button = tk.Button(top, text="Zamknij", command=top.destroy)
         close_button.pack(pady=10)
 
-    def prompt_rename_set(self, old_name):
-        """Prompts the user to rename a set."""
-        new_name = simpledialog.askstring("Zmień nazwę zestawu", f"Nowa nazwa dla zestawu '{old_name}':")
-        return new_name
+    def show_warning(self, title, message):
+        """Displays a warning message."""
+        messagebox.showwarning(title, message)
+
+    def show_info(self, title, message):
+        """Displays an info message."""
+        messagebox.showinfo(title, message)
+
+    def update_rfid_display(self, rfid):
+        """Updates the display when an RFID is inputted."""
+        print(f"RFID: {rfid}")
