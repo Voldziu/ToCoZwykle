@@ -77,7 +77,7 @@ class KioskView:
         """Displays categories in the listbox."""
         self.categories_listbox.delete(0, tk.END)
         for category in categories:
-            self.categories_listbox.insert(tk.END, category[1])
+            self.categories_listbox.insert(tk.END, category['name'])
 
     def load_products(self, products):
         """Displays products in the grid."""
@@ -88,9 +88,9 @@ class KioskView:
         for product in products:
             product_frame = tk.Frame(self.products_grid_frame, bg="lightblue", bd=2, relief=tk.RAISED)
             product_frame.grid(row=row, column=col, padx=10, pady=10)
-
-            tk.Label(product_frame, text=product[1], font=("Helvetica", 14), bg="lightblue").pack(pady=5)
-            tk.Label(product_frame, text=f"{product[2]} PLN", font=("Helvetica", 12), bg="lightblue").pack(pady=5)
+            
+            tk.Label(product_frame, text=product['name'], font=("Helvetica", 14), bg="lightblue").pack(pady=5)
+            tk.Label(product_frame, text=f"{product['price']} PLN", font=("Helvetica", 12), bg="lightblue").pack(pady=5)
             tk.Button(product_frame, text="Dodaj", command=lambda p=product: self.controller.add_to_cart(p)).pack(pady=5)
 
             col += 1
@@ -122,8 +122,7 @@ class KioskView:
 
             # Display items in the set
             for set_item in set_items_list:
-                product = set_item["product"]
-                product_name = product["name"]
+                product_name = set_item["product_name"]
                 product_quantity = set_item["quantity"]
                 product_label = tk.Label(set_frame, text=f"{product_name}: {product_quantity}", font=("Helvetica", 12))
                 product_label.pack(anchor="w", padx=5, pady=2)

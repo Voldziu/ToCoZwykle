@@ -21,13 +21,36 @@ def categories():
 @app.route('/products', methods=['GET', 'POST'])
 def products():
     db = get_db()
+    
     if request.method == 'GET':
-        products = db.execute("SELECT product_id, name, price, category_id FROM products").fetchall()
+        category = request.args.get('category')  # Fetch category ID from query parameters
+        
+        if category:
+            try:
+                # If category_id is provided, filter products by that category
+                products = db.execute("""
+                    SELECT product_id, p.name, price, p.category_id
+                    FROM products p
+                    JOIN categories c ON p.category_id = c.category_id
+                    WHERE c.name = ?
+                """, (category,)).fetchall()
+            except ValueError:
+                return jsonify({'error': 'Invalid category ID'}), 400
+        else:
+            # Fetch all products if no category filter is applied
+            products = db.execute("""
+                SELECT product_id, name, price, category_id
+                FROM products
+            """).fetchall()
+        
         return jsonify([{'product_id': row[0], 'name': row[1], 'price': row[2], 'category_id': row[3]} for row in products])
+    
     elif request.method == 'POST':
         data = request.json
-        db.execute("INSERT INTO products (product_id, name, price, category_id) VALUES (?, ?, ?, ?)",
-                   (data['product_id'], data['name'], data['price'], data['category_id']))
+        db.execute("""
+            INSERT INTO products (product_id, name, price, category_id)
+            VALUES (?, ?, ?, ?)
+        """, (data['product_id'], data['name'], data['price'], data['category_id']))
         db.commit()
         return jsonify({'message': 'Product added successfully!'}), 201
 
@@ -50,7 +73,38 @@ def assign_rfid():
     db.commit()
     return jsonify({'message': 'RFID and sets assigned successfully!'}), 201
 
+@app.route('/rfid/<rfid>/sets', methods=['GET'])
+def get_sets_by_rfid(rfid):
+    db = get_db()
+    
+    # Fetch all sets associated with the given RFID
+    sets = db.execute("""
+        SELECT zestawy.zestaw_name, product_zestaw.product_id, products.name AS product_name, 
+               product_zestaw.quantity
+        FROM zestawy
+        JOIN product_zestaw ON zestawy.zestaw_id = product_zestaw.zestaw_id
+        JOIN products ON product_zestaw.product_id = products.product_id
+        WHERE zestawy.rfid_id = ?
+    """, (rfid,)).fetchall()
+    
+    if not sets:
+        return jsonify({'error': 'No sets found for the given RFID'}), 404
+    
+    response = {}
+    for row in sets:
+        set_name = row['zestaw_name']
+        if set_name not in response:
+            response[set_name] = []
+        
+        response[set_name].append({
+            'product_id': row['product_id'],
+            'product_name': row['product_name'],
+            'quantity': row['quantity']
+        })
+
+    return jsonify(response), 200
+
 if __name__ == '__main__':
     db = get_db()
     seed_database(db)
-    app.run(debug=True)
+    app.run(debug=True, host="127.0.0.1")

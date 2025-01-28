@@ -31,7 +31,7 @@ def main():
     root = Tk()
 
     # Initialize Model and View
-    model = KioskModel(db)
+    model = KioskModel()
     view = KioskView(root)  # Do not pass the controller here yet
 
     # Initialize Controller
