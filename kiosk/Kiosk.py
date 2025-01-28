@@ -3,8 +3,6 @@ from tkinter import Tk
 from kiosk_model import KioskModel
 from kiosk_view import KioskView
 from kiosk_controller import KioskController
-from database import SQLDatabase
-from seeder import seed
 
 
 def start_terminal_rfid_listener(controller):
@@ -23,9 +21,6 @@ def start_terminal_rfid_listener(controller):
 
 
 def main():
-    # Initialize database and seed data
-    db = SQLDatabase()
-    seed(db)
 
     # Initialize root window
     root = Tk()
@@ -39,8 +34,6 @@ def main():
 
     # Start RFID input listener in a separate thread
     threading.Thread(target=start_terminal_rfid_listener, args=(controller,), daemon=True).start()
-
-    print(db.get_sets_by_rfid('1112223334'))
 
     # Start the GUI
     root.mainloop()
