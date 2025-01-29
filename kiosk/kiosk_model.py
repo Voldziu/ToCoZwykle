@@ -67,6 +67,44 @@ class KioskModel:
         else:
             return {"message": "Failed to add product"}
 
+    def delete_set(self,set_name,user_rfid):
+        data = {"set_name":set_name,"rfid":user_rfid}
+        response = requests.post(f'{self.BASE_URL}/delete_set',json=data)
+        if response.status_code == 201:
+            return response.json()
+        else:
+            return {"message": f"Failed to delete set {set_name} attached to user_rfid: {user_rfid}"}
+
+
+    def add_set(self,set_name,cart,user_rfid):
+        data = {"set_name":set_name,"cart":cart,"rfid":user_rfid}
+        print(data)
+        response = requests.post(f'{self.BASE_URL}/add_set', json=data)
+        print(response)
+        if response.status_code == 201:
+
+            return response.json()
+        else:
+            return {"message": f"Failed to add set {set_name} attached to user_rfid: {user_rfid}"}
+
+    def overwrite_set(self,set_name_old,set_name_new,cart,user_rfid):
+        data = {"set_name_old": set_name_old,"set_name_new":set_name_new, "cart": cart, "rfid": user_rfid}
+        response = requests.post(f'{self.BASE_URL}/overwrite_set', json=data)
+        if response.status_code == 201:
+            return response.json()
+        else:
+            return {"message": f"Failed to overwrite set {set_name_old} attached to user_rfid: {user_rfid}"}
+
+    def rename_set(self,set_name_old,user_rfid,set_name_new):
+        data = {"set_name_old": set_name_old, "rfid": user_rfid,"set_name_new":set_name_new}
+        response = requests.post(f'{self.BASE_URL}/rename_set',json=data)
+        if response.status_code == 201:
+            return response.json()
+        else:
+            return {"message": f"Failed to rename set {set_name_old} to new name: {set_name_new} attached to user_rfid: {user_rfid}"}
+
+
+
     def assign_sets_to_rfid(self, rfid, sets_dict):
         """Sends request to assign sets to RFID."""
         data = {"rfid": rfid, "sets": sets_dict}
