@@ -86,6 +86,18 @@ class KioskModel:
             return response.json()
         else:
             return {"message": f"Failed to add set {set_name} attached to user_rfid: {user_rfid}"}
+        
+    def does_set_exist(self, set_name, user_rfid):
+        # Sprawdzamy zestawy przypisane do danego RFID
+        response = requests.get(f'{self.BASE_URL}/rfid/{user_rfid}/sets')
+        
+        if response.status_code == 200:
+            sets = response.json()
+            # Sprawdzamy, czy zestaw o danej nazwie istnieje w odpowiedzi
+            return set_name in sets
+        else:
+            return False
+        
 
     def overwrite_set(self,set_name_old,set_name_new,cart,user_rfid):
         data = {"set_name_old": set_name_old,"set_name_new":set_name_new, "cart": cart, "rfid": user_rfid}
@@ -103,8 +115,6 @@ class KioskModel:
         else:
             return {"message": f"Failed to rename set {set_name_old} to new name: {set_name_new} attached to user_rfid: {user_rfid}"}
 
-
-
     def assign_sets_to_rfid(self, rfid, sets_dict):
         """Sends request to assign sets to RFID."""
         data = {"rfid": rfid, "sets": sets_dict}
@@ -113,3 +123,18 @@ class KioskModel:
             return response.json()
         else:
             return {"message": "Failed to assign sets to RFID"}
+    
+    def check_and_add_rfid(self, rfid):
+        """Sprawdza, czy RFID istnieje w bazie, a jeśli nie - dodaje je."""
+        response = requests.get(f"{self.BASE_URL}/rfid/{rfid}")
+        
+        if response.status_code == 404:  # RFID nie istnieje
+            add_response = requests.post(f"{self.BASE_URL}/rfid", json={"rfid": rfid})
+            if add_response.status_code == 201:
+                return {"message": "Karta wczytana pomyślnie", "rfid": rfid}
+            else:
+                return {"message": "Nie udało się dodać nowego RFID"}
+        elif response.status_code == 200:
+            return {"message": "RFID już istnieje", "rfid": rfid}
+        
+        return {"message": "Błąd połączenia z bazą danych"}

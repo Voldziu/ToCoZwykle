@@ -58,20 +58,34 @@ def products():
 def assign_rfid():
     db = get_db()
     data = request.json
-    rfid = data['rfid']
-    sets = data['sets']
-    db.execute("INSERT OR IGNORE INTO rfid (rfid_id) VALUES (?)", (rfid,))
+    rfid = data.get('rfid')
+    sets = data.get('sets', {})
+
+    if not rfid:
+        return jsonify({'error': 'RFID is required'}), 400
+
+    existing_rfid = db.execute("SELECT rfid_id FROM rfid WHERE rfid_id = ?", (rfid,)).fetchone()
+
+    if not existing_rfid:
+        db.execute("INSERT INTO rfid (rfid_id) VALUES (?)", (rfid,))
+        db.commit()
+
+    if not sets:
+        return jsonify({'message': 'RFID added successfully!', 'rfid': rfid}), 201
+
     for set_name, products in sets.items():
         db.execute("INSERT INTO zestawy (zestaw_name, rfid_id) VALUES (?, ?)", (set_name, rfid))
         zestaw_id = db.execute("SELECT last_insert_rowid()").fetchone()[0]
+
         for product_name, quantity in products.items():
             product = db.execute("SELECT product_id FROM products WHERE name = ?", (product_name,)).fetchone()
             if product:
                 product_id = product[0]
                 db.execute("INSERT INTO product_zestaw (product_id, zestaw_id, quantity) VALUES (?, ?, ?)",
                            (product_id, zestaw_id, quantity))
+
     db.commit()
-    return jsonify({'message': 'RFID and sets assigned successfully!'}), 201
+    return jsonify({'message': 'RFID and sets assigned successfully!', 'rfid': rfid}), 201
 
 @app.route('/rfid/<rfid>/sets', methods=['GET'])
 def get_sets_by_rfid(rfid):

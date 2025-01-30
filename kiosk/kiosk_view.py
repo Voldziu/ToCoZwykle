@@ -30,7 +30,7 @@ class KioskView:
         self.categories_listbox = tk.Listbox(self.categories_frame, width=20, height=25)
         self.categories_listbox.pack(fill=tk.BOTH, padx=10, pady=10, expand=True)
 
-        self.my_sets_button = tk.Button(self.categories_frame, text="Moje Zestawy")
+        self.my_sets_button = tk.Button(self.categories_frame, text="Moje Zestawy", state=tk.DISABLED)
         self.my_sets_button.pack(side=tk.BOTTOM, pady=10)
 
         # Products panel
@@ -64,7 +64,7 @@ class KioskView:
         # self.edit_cart_button.pack(pady=2)
 
         # Przycisk do zapisywania koszyka jako zestaw
-        self.save_set_button = tk.Button(self.cart_frame, text="Zapisz jako Zestaw", command=lambda: self.save_cart_as_set(self.cart))
+        self.save_set_button = tk.Button(self.cart_frame, text="Zapisz jako Zestaw", command=lambda: self.save_cart_as_set(self.cart), state=tk.DISABLED)
         self.save_set_button.pack(pady=2)
 
         self.clear_cart_button = tk.Button(self.cart_frame, text="Wyczyść Koszyk", command=self.controller.clear_cart if self.controller else None)
@@ -221,26 +221,7 @@ class KioskView:
         """Wykonuje checkout w osobnym wątku."""
         # Wykonanie checkout
         cart = self.controller.checkout()
-
-        # Przekazanie wyniku do głównego wątku za pomocą root.after
-        self.master.after(0, lambda: self.after_checkout(cart))
-
-    def after_checkout(self, cart):
-        """Funkcja wywoływana po zakończeniu checkout."""
-        # Wyświetlenie okna dialogowego
-        choice = messagebox.askquestion(
-            "Zapisz Zestaw",
-            "Czy chcesz zapisać koszyk jako zestaw?\nKliknij 'Tak', aby zapisać koszyk, lub 'Nie', aby wyjść."
-        )
-        if choice == "yes":
-            self.save_cart_as_set(cart)
-
-        # Ponowne włączenie przycisku
         self.checkout_button.config(state=tk.NORMAL)
-
-
-
-
 
     def _confirm_and_delete_set(self, set_name, delete_set_callback):
         """
@@ -323,3 +304,9 @@ class KioskView:
     def update_rfid_display(self, rfid):
         """Updates the display when an RFID is inputted."""
         print(f"RFID: {rfid}")
+
+    def update_buttons_state(self):
+        """Aktualizuje stan przycisków zależnie od tego, czy użytkownik ma zeskanowaną kartę."""
+        state = tk.NORMAL if self.controller.current_rfid else tk.DISABLED
+        self.save_set_button.config(state=state)
+        self.my_sets_button.config(state=state)

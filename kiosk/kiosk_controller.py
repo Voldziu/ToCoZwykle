@@ -51,10 +51,20 @@ class KioskController:
 
         total_price = self.model.calculate_total(self.cart)
         self.view.show_info("Zamówienie złożone", f"Twoje zamówienie o wartości {total_price:.2f} PLN zostało złożone!")
+        
         cart = copy(self.cart)
         print(cart)
+        
         self.clear_cart()
         print(cart)
+
+        # Odlączenie karty po zamówieniu
+        if self.current_rfid:
+            self.current_rfid = None
+            self.view.update_rfid_display(None)
+            self.view.update_buttons_state()
+        
+        
         return cart
 
 
@@ -81,8 +91,11 @@ class KioskController:
         #self.view.show_info("Usunięto zestaw", f"Zestaw {set_name} został usunięty.")
         self.show_user_sets()
 
-    def add_set(self,set_name,cart):
-        self.model.add_set(set_name,cart,self.current_rfid)
+    def add_set(self, set_name, cart):
+        if self.model.does_set_exist(set_name, self.current_rfid):
+            self.overwrite_set(set_name, set_name, cart) 
+        else:
+            self.model.add_set(set_name, cart, self.current_rfid)
         self.show_user_sets()
 
     def overwrite_set(self,set_name_old,set_name_new,cart):
@@ -98,6 +111,13 @@ class KioskController:
             self.show_user_sets() 
 
     def handle_rfid_input(self, rfid):
-        """Handles the input from the RFID terminal."""
-        self.current_rfid = rfid
-        self.view.update_rfid_display(rfid)
+        """Obsługuje wejście RFID - sprawdza i dodaje nowe, jeśli nie istnieje."""
+        response = self.model.check_and_add_rfid(rfid)
+
+        if response.get("rfid"):
+            self.current_rfid = rfid
+            self.view.update_rfid_display(rfid)
+            self.view.update_buttons_state() 
+            self.view.show_info("RFID", response["message"])
+        else:
+            self.view.show_warning("Błąd RFID", response["message"])
