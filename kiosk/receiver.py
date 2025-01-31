@@ -16,12 +16,17 @@ class MqttClient(QObject):
         self.is_listening = True  # Flaga kontrolująca nasłuchiwanie RFID
         self.message = None
         self.Kiosk = None
+        self.controller=None
 
     def setMessage(self, message):
         self.message = message
 
     def setKiosk(self, kiosk):
         self.kiosk = kiosk
+
+    def setController(self,controller):
+        
+        self.controller = controller
 
     def run(self):
         # Konfiguracja klienta MQTT
@@ -47,13 +52,12 @@ class MqttClient(QObject):
     def on_message(self, client, userdata, msg):
         print(msg)
         try:
-            message_decoded = msg.payload.decode("utf-8")
-            print(message_decoded)
-            data = json.loads(message_decoded)
-            print(data["Karta"])
-            self.message = data["Karta"]
-            self.kiosk.handle_mqtt_message(data["Karta"])
-            self.message_received.emit(data)  # Emit sygnału z danymi
+            rfid = msg.payload.decode("utf-8")
+            print(rfid)
+            
+            
+            self.controller.handle_rfid_input(rfid)
+           
         except json.JSONDecodeError as e:
             print("exzce")
             self.message_received.emit({"error": f"Błąd dekodowania JSON: {e}"})

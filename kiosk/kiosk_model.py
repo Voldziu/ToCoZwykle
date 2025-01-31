@@ -3,6 +3,7 @@ import requests
 class KioskModel:
     """Model responsible for managing data logic and interacting with Flask API."""
 
+    #BASE_URL = "http://10.108.33.113:5000"  # Flask server URL
     BASE_URL = "http://127.0.0.1:5000"  # Flask server URL
 
     def get_categories(self):

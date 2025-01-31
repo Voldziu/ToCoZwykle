@@ -186,20 +186,20 @@ class KioskView:
                 # Create a frame for buttons
                 button_frame = tk.Frame(set_frame, bg="white")
                 button_frame.pack(fill=tk.X, pady=5)
-
+                if not select_set_callback:
                 # "Add to Cart" button
-                add_to_cart_button = tk.Button(button_frame, text="Dodaj do koszyka",
-                                               command=lambda s=set_items_list: add_set_to_cart(s))
-                add_to_cart_button.pack(side=tk.LEFT, padx=5)
+                    add_to_cart_button = tk.Button(button_frame, text="Dodaj do koszyka",
+                                                command=lambda s=set_items_list: add_set_to_cart(s))
+                    add_to_cart_button.pack(side=tk.LEFT, padx=5)
 
-                # "Delete" button with confirmation
-                delete_button = tk.Button(button_frame, text="Usuń",
-                                          command=lambda s=set_name: self._confirm_and_delete_set(s, delete_set))
-                delete_button.pack(side=tk.LEFT, padx=5)
+                    # "Delete" button with confirmation
+                    delete_button = tk.Button(button_frame, text="Usuń",
+                                            command=lambda s=set_name: self._confirm_and_delete_set(s, delete_set))
+                    delete_button.pack(side=tk.LEFT, padx=5)
 
-                # "Rename" button
-                rename_button = tk.Button(button_frame, text="Zmień nazwę", command=lambda s=set_name: rename_set(s))
-                rename_button.pack(side=tk.LEFT, padx=5)
+                    # "Rename" button
+                    rename_button = tk.Button(button_frame, text="Zmień nazwę", command=lambda s=set_name: rename_set(s))
+                    rename_button.pack(side=tk.LEFT, padx=5)
 
                 if select_set_callback:
                     select_button = tk.Button(button_frame, text="Wybierz do nadpisania",

@@ -9,6 +9,7 @@ class KioskController:
         self.view = view
         self.cart = {}
         self.current_rfid = None
+        
 
         # Load initial data
         self.load_categories()
